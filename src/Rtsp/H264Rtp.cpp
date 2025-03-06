@@ -112,6 +112,7 @@ void H264RtpEncoder::packRtpFu(const char* ptr, size_t len, uint32_t pts, bool i
 RtpPacket::Ptr H264RtpEncoder::makeRtp(int type,const char* data,size_t len,bool mark,uint32_t stamp) {
     uint16_t playload_len = (uint16_t)(len + RtpPacket::RtpHeaderSize);
     RtpPacket::Ptr rtp = RtpPacket::CreateRtp();
+    rtp->sample_rate = _sample_rate;
     //rtsp over tcp ͷ
     auto pack = rtp->getData();
     std::string capacity(RtpPacket::RtpTcpHeaderSize + playload_len, 0);

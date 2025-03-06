@@ -17,7 +17,7 @@ RtspSession::RtspSession() {
 RtspSession::~RtspSession() {
 }
 
-void RtspSession::onWholeRtspPacket(const TcpConnectionPtr& conn, const RtspRequest& request) {
+void RtspSession::onWholeRtspPacket(const RtspRequest& request) {
 	_cseq = atoi(request.GetRequestValue("CSeq").c_str());
 	if (_content_base.empty() && request.method() != "GET") {
 		_content_base = request.url();
@@ -26,22 +26,22 @@ void RtspSession::onWholeRtspPacket(const TcpConnectionPtr& conn, const RtspRequ
 		_schema = "rtsp";
 	}
 	if (request.method() == "OPTIONS")
-		handleOptions(conn, request);
+		handleOptions(request);
 	else if (request.method() == "DESCRIBE")
-		handleDescribe(conn, request);
+		handleDescribe(request);
 	else if (request.method() == "SETUP")
-		handleSetup(conn, request);
+		handleSetup(request);
 	else if (request.method() == "PLAY")
-		handlePlay(conn, request);
+		handlePlay(request);
 	else
-		conn->Send(getRtspResponse("403 Forbidden"));
+		Send(getRtspResponse("403 Forbidden"));
 }
 
-void RtspSession::handleOptions(const TcpConnectionPtr& conn, const RtspRequest& request) {
+void RtspSession::handleOptions(const RtspRequest& request) {
 	auto resp = getRtspResponse("200 OK", { "Public" , "OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, ANNOUNCE, RECORD" });
-	conn->Send(resp);
+	Send(resp);
 }
-void RtspSession::handleDescribe(const TcpConnectionPtr& conn, const RtspRequest& request) {
+void RtspSession::handleDescribe(const RtspRequest& request) {
 
 	_stream = std::make_shared<RtspMediaStream>(_streamid);
 
@@ -57,18 +57,21 @@ void RtspSession::handleDescribe(const TcpConnectionPtr& conn, const RtspRequest
 	auto ready = _stream->createFromEs(trackRef->_pt, trackRef->_samplerate);
 	_sessionid = makeRandStr(12);
 	if (!ready) {
-		conn->Send(getRtspResponse("404 Stream Not Found", { "Connection","Close" }));
+		Send(getRtspResponse("404 Stream Not Found", { "Connection","Close" }));
 		return;
 	}
+
+	_rtcp_context.clear();
+	_rtcp_context.emplace_back(std::make_shared<RtcpContextForSend>());
 	
-	conn->Send(getRtspResponse("200 OK",
+	Send(getRtspResponse("200 OK",
 		{ "Content-Base", _content_base + "/",
 		 "x-Accept-Retransmit","our-retransmit",
 		 "x-Accept-Dynamic-Rate","1"
 		}, _stream->getSdp()));
 
 }
-void RtspSession::handleSetup(const TcpConnectionPtr& conn, const RtspRequest& request) {
+void RtspSession::handleSetup(const RtspRequest& request) {
 	Track::Ptr& trackRef = _stream->getMediaTrack();
 	//trackRef->_inited = true; 
 
@@ -87,7 +90,7 @@ void RtspSession::handleSetup(const TcpConnectionPtr& conn, const RtspRequest& r
 
 	switch (_rtp_type) {
 	case eRtpType::RTP_TCP: {
-		conn->Send(getRtspResponse("200 OK",
+		Send(getRtspResponse("200 OK",
 			{ "Transport",(std::string("RTP/AVP/TCP;unicast;") + "interleaved=") +
 							std::to_string((int)trackRef->_interleaved) + "-" +
 							std::to_string((int)trackRef->_interleaved + 1) + ";" +
@@ -105,13 +108,13 @@ void RtspSession::handleSetup(const TcpConnectionPtr& conn, const RtspRequest& r
 
 }
 
-void RtspSession::handlePlay(const TcpConnectionPtr& conn, const RtspRequest& request) {
+void RtspSession::handlePlay(const RtspRequest& request) {
 	if(_stream->getMediaTrack() == nullptr || request.GetRequestValue("Session") != _sessionid) {
-		conn->Send(getRtspResponse("454 Session Not Found", { "Connection","Close" }));
+		Send(getRtspResponse("454 Session Not Found", { "Connection","Close" }));
 		return;
 	}
 	if (!_stream) {
-		conn->Send(getRtspResponse("404 Stream Not Found", { "Connection","Close" }));
+		Send(getRtspResponse("404 Stream Not Found", { "Connection","Close" }));
 		return;
 	}
 	auto Scale = request.GetRequestValue("Scale");
@@ -129,20 +132,26 @@ void RtspSession::handlePlay(const TcpConnectionPtr& conn, const RtspRequest& re
 	rtp_info.pop_back();
 	resMap.emplace("RTP-Info", rtp_info);
 	resMap.emplace("Range", std::string("npt=") + std::to_string(trackRef->_time_stamp / 1000.0));
-	conn->Send(getRtspResponse("200 OK", resMap));
-	std::weak_ptr<TcpConnection> conn_weak_self = std::dynamic_pointer_cast<TcpConnection>(conn);
-	auto play = [conn_weak_self](const RtpPacket::Ptr& packet) {
-		auto strong_self = conn_weak_self.lock();
+	Send(getRtspResponse("200 OK", resMap));
+	std::weak_ptr<RtspSession> rtsp_weak_self = std::dynamic_pointer_cast<RtspSession>(shared_from_this());
+	auto play = [rtsp_weak_self](const RtpPacket::Ptr& packet) {
+		auto strong_self = rtsp_weak_self.lock();
 		if (!strong_self) {
 			//对象已销毁
 			return false;
 		}
+		strong_self->updateRtcpContext(packet);
 		LOG_INFO << "rtp seq: " << packet->getSeq() << " ,TimeStamp: " << packet->getStamp();
-		strong_self->Send(packet->getData()->RetrieveAllAsString());
+		strong_self->Send(packet);
 		};
 	_stream->setEncoderSendCB(play);
 	auto stream = getStream();
 	std::weak_ptr<RtspMediaStream> stream_weak_self = std::dynamic_pointer_cast<RtspMediaStream>(stream);
+	auto conn = conn_weak_self.lock();
+	if (!conn) {
+		//对象已销毁
+		return ;
+	}
 	_timer = conn->loop()->RunEvery(500, [stream_weak_self]() {
 		auto strong_self = stream_weak_self.lock();
 		if (!strong_self) {
@@ -155,12 +164,29 @@ void RtspSession::handlePlay(const TcpConnectionPtr& conn, const RtspRequest& re
 
 }
 
-void RtspSession::handleTeardown(const TcpConnectionPtr& conn, const RtspRequest& request) {
+void RtspSession::handleTeardown(const RtspRequest& request) {
 
 }
 
-void RtspSession::handlePause(const TcpConnectionPtr& conn, const RtspRequest& request) {
+void RtspSession::handlePause(const RtspRequest& request) {
 
+}
+
+void RtspSession::updateRtcpContext(const RtpPacket::Ptr& rtp) {
+	auto& rtcp_ctx = _rtcp_context[0];
+	rtcp_ctx->onRtp(rtp->getSeq(), rtp->getStamp(),/*rtp->ntp_stamp*/TimeStamp::Now().microseconds(), rtp->sample_rate, rtp->getData()->readablebytes() - RtpPacket::RtpTcpHeaderSize);
+	auto& ticker = _rtcp_send_ticker;
+	if (TimeStamp::Now() > TimeStamp::AddTime(ticker, 5, TimeUnit::SECONDS) || _send_sr_rtcp) {
+		_rtcp_send_ticker = TimeStamp::Now();
+		//确保在发送rtp前，先发送一次sender report rtcp(用于播放器同步音视频)
+		_send_sr_rtcp = false;
+
+		auto ssrc = rtp->getSSRC();
+		auto rtcp = rtcp_ctx->createRtcpSR(ssrc);
+		//auto rtcp_sdes = RtcpSdes::create({ kServerName });
+		//还需添加rtp over tcp header
+		Send(rtcp->RetrieveAllAsString());
+	}
 }
 
 static std::string dateStr() {
@@ -212,6 +238,24 @@ std::string RtspSession::getRtspResponse(const std::string& res_code, const std:
 	return message;
 }
 
+bool RtspSession::Send(const RtpPacket::Ptr& rtp) {
+	auto strong_self = conn_weak_self.lock();
+	if (!strong_self) {
+		//对象已销毁
+		return false;
+	}
+	strong_self->Send(rtp->getData()->RetrieveAllAsString());
+}
+
+bool RtspSession::Send(const std::string& msg) {
+	auto strong_self = conn_weak_self.lock();
+	if (!strong_self) {
+		//对象已销毁
+		return false;
+	}
+	strong_self->Send(msg);
+}
+
 void RtspSession::parse(const std::string& url_in) {
 	std::string url = url_in;
 	auto schema_pos = url.find("://");
@@ -248,4 +292,8 @@ void RtspSession::parse(const std::string& url_in) {
 
 std::shared_ptr<RtspMediaStream> RtspSession::getStream() {
 	return _stream;
+}
+
+void RtspSession::setConnWeakPtr(const std::weak_ptr<TcpConnection>& conn_weak) {
+	conn_weak_self = conn_weak;
 }

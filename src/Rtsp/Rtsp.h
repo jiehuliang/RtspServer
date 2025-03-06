@@ -107,6 +107,11 @@ public:
 
 	static Ptr CreateRtp();
 
+	//音频为采样率，视频一般为90000
+	uint32_t sample_rate;
+	//ntp时间戳
+	uint64_t ntp_stamp;
+
 private:
 	std::shared_ptr<Buffer> data_;
 };

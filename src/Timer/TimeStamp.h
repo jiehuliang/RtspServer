@@ -24,6 +24,9 @@ class TimeStamp{
         bool operator<(const TimeStamp &rhs) const{
             return micro_seconds_ < rhs.microseconds();
         }
+        bool operator>(const TimeStamp& rhs) const {
+            return micro_seconds_ > rhs.microseconds();
+        }
         bool operator==(const TimeStamp &rhs) const{
             return micro_seconds_ == rhs.microseconds();
         }

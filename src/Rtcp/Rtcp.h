@@ -77,21 +77,35 @@ private:
     uint32_t length : 16;
 
 public:
+    static std::vector<RtcpHeader*> loadFromBytes(char* data, size_t size);
+
+    static std::shared_ptr<Buffer> toBuffer(std::shared_ptr<RtcpHeader> rtcp);
+
     void setSize(size_t size);
 
     size_t getSize();
+
+private:
+    void net2Host(size_t size);
 };
 
 class ReportItem {
 public:
+    friend class RtcpRR;
+
     uint32_t ssrc;
     uint32_t fraction : 8;
     uint32_t cumulative : 24;
     uint16_t seq_cycles;
     uint16_t seq_max;
     uint32_t jitter;
+    //Last SR timestamp, NTP timestamp,(ntpmsw & 0xFFFF) << 16  | (ntplsw >> 16) & 0xFFFF)
     uint32_t last_sr_stamp;
+    //Delay since last SR timestamp,expressed in units of 1/65536 seconds
     uint32_t delay_since_last_sr;
+
+private:
+    void net2Host();
 };
 
 /*
@@ -155,12 +169,18 @@ public:
 
 class RtcpRR :public RtcpHeader {
 public:
+    friend class RtcpHeader;
+
     uint32_t ssrc;
     //may be more
     ReportItem items;
 
 public:
-    
+    static std::shared_ptr<RtcpRR> create(size_t item_count);
+
+    std::vector<ReportItem*> getItemList();
+private:
+    void net2Host(size_t size);
 };
 
 #endif //RTCP_H

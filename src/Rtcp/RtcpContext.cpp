@@ -11,7 +11,31 @@ void RtcpContext::onRtp(uint16_t seq, uint32_t stamp, uint64_t ntp_stamp_ms, uin
 }
 
 void RtcpContextForSend::onRtcp(RtcpHeader* rtcp) {
-
+	switch ((RTCP_TYPE)rtcp->pt) {
+		case RTCP_TYPE::RTCP_RR: {
+			auto rtcp_rr = (RtcpRR*)rtcp;
+			for (auto item : rtcp_rr->getItemList()) {
+				if (!item->last_sr_stamp) {
+					continue;
+				}
+				auto it = _sender_report_ntp.find(item->last_sr_stamp);
+				if (it == _sender_report_ntp.end()) {
+					continue;
+				}
+				//发送sr 到收到rr之间的时间戳增量,系统时间可回退不稳定，以后需要换成程序启动时间
+				auto ms_inc = TimeStamp::Now().microseconds() - it->second;
+				//rtp接收端收到sr包后，回复rr包的延时，已转换为毫秒
+				auto delay_ms = (uint64_t)item->delay_since_last_sr * 1000 / 65536;
+				auto rtt = (int)(ms_inc - delay_ms);
+				if (rtt >= 0) {
+					//rtt 不可能小于0
+					_rtt[item->ssrc] = rtt;
+				}
+			}
+			break;
+		}
+		default:break;
+	}
 }
 
 
@@ -32,7 +56,5 @@ std::shared_ptr<Buffer> RtcpContextForSend::createRtcpSR(uint32_t rtcp_ssrc) {
 		_sender_report_ntp.erase(_sender_report_ntp.begin());
 	}
 
-	std::shared_ptr<Buffer> buffer;
-	buffer->Append((char*)rtcp.get(), rtcp->getSize());
-	return std::move(buffer);
+	return RtcpHeader::toBuffer(rtcp);
 }

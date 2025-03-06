@@ -7,6 +7,7 @@
 #include "RtspMediaStream.h"
 #include "Rtsp.h"
 #include "Timer.h"
+#include "RtcpContext.h"
 class HttpRequest;
 class TcpConnection;
 
@@ -16,24 +17,34 @@ class RtspSession :public std::enable_shared_from_this<RtspSession>{
 public:
 	RtspSession();
 	~RtspSession();
-	void onWholeRtspPacket(const TcpConnectionPtr& conn,const RtspRequest& request);
-	void handleOptions(const TcpConnectionPtr& conn, const RtspRequest& request);
-	void handleDescribe(const TcpConnectionPtr& conn, const RtspRequest& request);
-	void handleSetup(const TcpConnectionPtr& conn, const RtspRequest& request);
-	void handlePlay(const TcpConnectionPtr& conn, const RtspRequest& request);
-	void handleTeardown(const TcpConnectionPtr& conn, const RtspRequest& request);
-	void handlePause(const TcpConnectionPtr& conn, const RtspRequest& request);
+	void onWholeRtspPacket(const RtspRequest& request);
+	void handleOptions(const RtspRequest& request);
+	void handleDescribe(const RtspRequest& request);
+	void handleSetup(const RtspRequest& request);
+	void handlePlay(const RtspRequest& request);
+	void handleTeardown(const RtspRequest& request);
+	void handlePause(const RtspRequest& request);
+
+	//触发rtcp发送
+	void updateRtcpContext(const RtpPacket::Ptr& rtp);
 
 	std::string getRtspResponse(const std::string& res_code, const std::initializer_list<std::string>& headers,
 		const std::string& sdp = "", const std::string& protocol = "RTSP/1.0");
 	std::string getRtspResponse(const std::string& res_code, const std::map<std::string, std::string>& headers = std::map<std::string, std::string>(),
 		const std::string& sdp = "", const std::string& protocol = "RTSP/1.0");
 
+	bool Send(const RtpPacket::Ptr& rtp);
+	bool Send(const std::string &msg);
+
 	void parse(const std::string& url_in);
 
 	std::shared_ptr<RtspMediaStream> getStream();
 
+	void setConnWeakPtr(const std::weak_ptr<TcpConnection>& conn_weak);
+
 private:
+	std::weak_ptr<TcpConnection> conn_weak_self;
+
 	//收到的seq，回复时一致
 	int _cseq = 0;
 	//消耗的总流量
@@ -59,6 +70,10 @@ private:
 
 
 	Timer::TimerPtr _timer;
+
+	bool _send_sr_rtcp = true;
+	TimeStamp _rtcp_send_ticker = TimeStamp::Now();
+	std::vector<std::shared_ptr<RtcpContext>> _rtcp_context;
 };
 
 #endif // RTSP_SESSION_H

@@ -42,6 +42,7 @@ void TcpConnection::ConnectionEstablished(){
     if (on_connect_){
         on_connect_(shared_from_this());
     }
+    session_->setConnWeakPtr(std::weak_ptr<TcpConnection>(shared_from_this()));
 }
 
 void TcpConnection::ConnectionDestructor(){
