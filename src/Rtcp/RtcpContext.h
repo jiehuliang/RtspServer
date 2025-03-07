@@ -2,7 +2,7 @@
 #define RTCP_CONTEXT_H
 #include "Rtcp.h"
 #include "Buffer.h"
-
+#include "Logging.h"
 #include <map>
 
 class RtcpContext {
@@ -15,7 +15,9 @@ public:
 
 	virtual void onRtcp(RtcpHeader* rtcp) = 0;
 
-	virtual std::shared_ptr<Buffer> createRtcpSR(uint32_t rtcp_ssrc);
+	virtual std::shared_ptr<Buffer> createRtcpSR(uint32_t rtcp_ssrc) {
+		LOG_ERROR << "没有实现, rtp接收者尝试发送sr包";
+	};
 
 protected:
 	//收到或发送的rtp的字节数

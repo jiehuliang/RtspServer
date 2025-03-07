@@ -33,20 +33,41 @@ void RtspServer::OnConnection(const std::shared_ptr<TcpConnection>& conn) {
 
 void RtspServer::OnMessage(const std::shared_ptr<TcpConnection>& conn) {
 	if (conn->state() == TcpConnection::ConnectionState::Connected) {
-		auto str = conn->read_buf()->RetrieveAllAsString();
+		auto ptr = conn->read_buf()->Peek();
+
 		HttpContext* context = conn->context();
-		if (!context->ParaseRequest(str))
-		{
-			LOG_INFO << "RtspServer::onMessage : Receive non Rtsp message: " << str;
-			// conn->Send("Rtsp/1.0 400 Bad Request\r\n\r\n");
-			// conn->HandleClose();
+		if (ptr[0] != '$') {
+			auto str = conn->read_buf()->RetrieveAllAsString();
+			if (!context->ParaseRequest(str))
+			{
+				LOG_INFO << "RtspServer::onMessage : Receive non Rtsp message ";
+				//conn->Send("Rtsp/1.0 400 Bad Request\r\n\r\n");
+				//conn->HandleClose();
+			}
+			if (context->GetCompleteRequest())
+			{
+				conn->session()->onWholeRtspPacket(*context->request());
+				context->ResetContextStatus();
+			}
+		}
+		else {
+			//这是rtp包
+			if (conn->read_buf()->readablebytes() < 4) {
+				//数据不够
+				return ;
+			}
+			if (ptr[1] != 0x00 && ptr[1] != 0x01 && ptr[1] != 0x02 && ptr[1] != 0x03) {
+				//数据错误
+				return ;
+			}
+			uint16_t length = (((uint8_t*)ptr)[2] << 8) | ((uint8_t*)ptr)[3];
+			if (conn->read_buf()->readablebytes() < length) {
+				return;
+			}
+			auto str = conn->read_buf()->RetrieveAsString(RtpPacket::RtpTcpHeaderSize + length);
+			conn->session()->onRtpPacket(str.c_str(), str.size());
 		}
 
-		if (context->GetCompleteRequest())
-		{
-			conn->session()->onWholeRtspPacket(conn, *context->request());
-			context->ResetContextStatus();
-		}
 	}
 }
 

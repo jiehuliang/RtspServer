@@ -27,6 +27,10 @@ public:
 
 	//触发rtcp发送
 	void updateRtcpContext(const RtpPacket::Ptr& rtp);
+	//收到rtp包
+	void onRtpPacket(const char* data,size_t len);
+
+	void onRtcpPacket(const char* data, size_t len);
 
 	std::string getRtspResponse(const std::string& res_code, const std::initializer_list<std::string>& headers,
 		const std::string& sdp = "", const std::string& protocol = "RTSP/1.0");

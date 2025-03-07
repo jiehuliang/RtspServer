@@ -141,7 +141,7 @@ void RtspSession::handlePlay(const RtspRequest& request) {
 			return false;
 		}
 		strong_self->updateRtcpContext(packet);
-		LOG_INFO << "rtp seq: " << packet->getSeq() << " ,TimeStamp: " << packet->getStamp();
+		//LOG_INFO << "rtp seq: " << packet->getSeq() << " ,TimeStamp: " << packet->getStamp();
 		strong_self->Send(packet);
 		};
 	_stream->setEncoderSendCB(play);
@@ -185,7 +185,32 @@ void RtspSession::updateRtcpContext(const RtpPacket::Ptr& rtp) {
 		auto rtcp = rtcp_ctx->createRtcpSR(ssrc);
 		//auto rtcp_sdes = RtcpSdes::create({ kServerName });
 		//还需添加rtp over tcp header
+		auto& track = _stream->getMediaTrack();
+		std::shared_ptr<Buffer> rtp_tcp = std::make_shared<Buffer>();
+		std::string capacity(RtpPacket::RtpTcpHeaderSize, 0);
+		rtp_tcp->Append(capacity.c_str(), RtpPacket::RtpTcpHeaderSize);
+		auto ptr = rtp_tcp->Peek();
+		ptr[0] = '$';
+		ptr[1] = track->_interleaved + 1;
+		ptr[2] = ((uint16_t)(rtcp->readablebytes()) >> 8) & 0xFF;
+		ptr[3] = (uint16_t)(rtcp->readablebytes()) & 0xFF;
+		rtcp->AppendPrepend(rtp_tcp->Peek(), rtp_tcp->readablebytes());
+
 		Send(rtcp->RetrieveAllAsString());
+	}
+}
+
+void RtspSession::onRtpPacket(const char* data, size_t len) {
+	uint8_t interleaved = data[1];
+	if (interleaved % 2 != 0) {
+		onRtcpPacket(data + RtpPacket::RtpTcpHeaderSize, len - RtpPacket::RtpTcpHeaderSize);
+	}
+}
+
+void RtspSession::onRtcpPacket(const char* data, size_t len) {
+	auto rtcp_arr = RtcpHeader::loadFromBytes((char*)data, len);
+	for (auto &rtcp : rtcp_arr) {
+		_rtcp_context[0]->onRtcp(rtcp);
 	}
 }
 

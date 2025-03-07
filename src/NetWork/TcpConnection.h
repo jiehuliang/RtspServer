@@ -90,7 +90,7 @@ private:
 
     std::unique_ptr<HttpContext> context_;
 
-    std::unique_ptr<RtspSession> session_;
+    std::shared_ptr<RtspSession> session_;
 
     // 需要频繁赋值，使用普通成员变量。
     TimeStamp timestamp_;
