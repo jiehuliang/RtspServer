@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <atomic>
 #include <memory>
+#include <arpa/inet.h>
 
 
 RtspSession::RtspSession() {
@@ -165,7 +166,7 @@ void RtspSession::handlePlay(const RtspRequest& request) {
 }
 
 void RtspSession::handleTeardown(const RtspRequest& request) {
-
+	Send(getRtspResponse("200 OK"));
 }
 
 void RtspSession::handlePause(const RtspRequest& request) {
@@ -181,22 +182,29 @@ void RtspSession::updateRtcpContext(const RtpPacket::Ptr& rtp) {
 		//确保在发送rtp前，先发送一次sender report rtcp(用于播放器同步音视频)
 		_send_sr_rtcp = false;
 
+		static auto send_rtcp = [](RtspSession* thiz,std::shared_ptr<Buffer> rtcp) {
+			auto& track = thiz->_stream->getMediaTrack();
+			//还需添加rtp over tcp header
+			std::shared_ptr<Buffer> rtp_tcp = std::make_shared<Buffer>();
+			std::string capacity(RtpPacket::RtpTcpHeaderSize, 0);
+			rtp_tcp->Append(capacity.c_str(), RtpPacket::RtpTcpHeaderSize);
+			auto ptr = rtp_tcp->Peek();
+			ptr[0] = '$';
+			ptr[1] = track->_interleaved + 1;
+			ptr[2] = ((uint16_t)(rtcp->readablebytes()) >> 8) & 0xFF;
+			ptr[3] = (uint16_t)(rtcp->readablebytes()) & 0xFF;
+			rtcp->AppendPrepend(rtp_tcp->Peek(), rtp_tcp->readablebytes());
+			thiz->Send(rtcp->RetrieveAllAsString());
+		};
+
 		auto ssrc = rtp->getSSRC();
 		auto rtcp = rtcp_ctx->createRtcpSR(ssrc);
-		//auto rtcp_sdes = RtcpSdes::create({ kServerName });
-		//还需添加rtp over tcp header
-		auto& track = _stream->getMediaTrack();
-		std::shared_ptr<Buffer> rtp_tcp = std::make_shared<Buffer>();
-		std::string capacity(RtpPacket::RtpTcpHeaderSize, 0);
-		rtp_tcp->Append(capacity.c_str(), RtpPacket::RtpTcpHeaderSize);
-		auto ptr = rtp_tcp->Peek();
-		ptr[0] = '$';
-		ptr[1] = track->_interleaved + 1;
-		ptr[2] = ((uint16_t)(rtcp->readablebytes()) >> 8) & 0xFF;
-		ptr[3] = (uint16_t)(rtcp->readablebytes()) & 0xFF;
-		rtcp->AppendPrepend(rtp_tcp->Peek(), rtp_tcp->readablebytes());
-
-		Send(rtcp->RetrieveAllAsString());
+	
+		auto rtcp_sdes = RtcpSdes::create({ "RtspServer" });
+		rtcp_sdes->chunks.type = (uint8_t)SDES_TYPE::RTCP_SDES_CNAME;
+		rtcp_sdes->chunks.ssrc = htonl(ssrc);
+		send_rtcp(this,rtcp);
+		send_rtcp(this, RtcpHeader::toBuffer(rtcp_sdes));
 	}
 }
 

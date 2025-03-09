@@ -153,3 +153,63 @@ void RtcpRR::net2Host(size_t size) {
 
     CHECK_REPORT_COUNT(item_count);
 }
+
+size_t SdesChunk::totalBytes() const {
+    return alignSize(minSize() + txt_len);
+}
+
+size_t SdesChunk::minSize() {
+    return sizeof(SdesChunk) - sizeof(text);
+}
+
+void SdesChunk::net2Host() {
+    ssrc = ntohl(ssrc);
+}
+
+std::shared_ptr<RtcpSdes> RtcpSdes::create(const std::vector<std::string>& item_text) {
+    size_t item_total_size = 0;
+    for (auto& text : item_text) {
+        //统计所有SdesChunk对象占用的空间
+        item_total_size += alignSize(SdesChunk::minSize() + (0xFF & text.size()));
+    }
+    auto real_size = sizeof(RtcpSdes) - sizeof(SdesChunk) + item_total_size;
+    auto bytes = alignSize(real_size);
+    auto ptr = (RtcpSdes*)new char[bytes];
+    memset(ptr, 0x00, bytes);
+    auto item_ptr = &ptr->chunks;
+    for (auto& text : item_text) {
+        item_ptr->txt_len = (text.size() & 0xFF);
+        //确保赋值\0为RTCP_SDES_END
+        memcpy(item_ptr->text, text.data(), item_ptr->txt_len + 1);
+        item_ptr = (SdesChunk*)((char*)item_ptr + item_ptr->totalBytes());
+    }
+
+    setupHeader(ptr, RTCP_TYPE::RTCP_SDES, item_text.size(), bytes);
+    setupPadding(ptr, bytes - real_size);
+    return std::shared_ptr<RtcpSdes>(ptr, [](RtcpSdes* ptr) {
+        delete[](char*) ptr;
+    });
+}
+
+void RtcpSdes::net2Host(size_t size) {
+    static const size_t kMinSize = sizeof(RtcpSdes) - sizeof(chunks);
+    CHECK_MIN_SIZE(size, kMinSize);
+    SdesChunk* ptr = &chunks;
+    int item_count = 0;
+    for (int i = 0; i < (int)report_count && (char*)(ptr)+SdesChunk::minSize() <= (char*)(this) + size; ++i) {
+        ptr->net2Host();
+        ptr = (SdesChunk*)((char*)ptr + ptr->totalBytes());
+        ++item_count;
+    }
+    CHECK_REPORT_COUNT(item_count);
+}
+
+std::vector<SdesChunk*> RtcpSdes::getChunkList() {
+    std::vector<SdesChunk*> ret;
+    SdesChunk* ptr = &chunks;
+    for (int i = 0; i < (int)report_count; ++i) {
+        ret.emplace_back(ptr);
+        ptr = (SdesChunk*)((char*)ptr + ptr->totalBytes());
+    }
+    return ret;
+}

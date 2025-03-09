@@ -4,7 +4,7 @@
 cmake_minimum_required (VERSION 3.8)
 
 
-project ("cppserverstudio")
+project ("RSTool")
 
 # 使能 C++11
 # Enable C++11

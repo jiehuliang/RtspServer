@@ -183,4 +183,76 @@ private:
     void net2Host(size_t size);
 };
 
+/////////////////////////////////////////////////////////////////////////////
+
+/*
+ *      6.5 SDES: Source Description RTCP Packet
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+header |V=2|P|    SC   |  PT=SDES=202  |             length            |
+       +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+chunk  |                          SSRC/CSRC_1                          |
+  1    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       |                           SDES items                          |
+       |                              ...                              |
+       +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+chunk  |                          SSRC/CSRC_2                          |
+  2    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       |                           SDES items                          |
+       |                              ...                              |
+       +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ */
+
+ /*
+
+ SDES items 定义
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |   SdesType  |     length    | user and domain name        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
+ //Source description Chunk
+class SdesChunk {
+public:
+    friend class RtcpSdes;
+    uint32_t ssrc;
+    //SdesType
+    uint8_t type;
+    //text长度股，可以为0
+    uint8_t txt_len;
+    //不定长
+    char text[1];
+    //最后以RTCP_SDES_END结尾
+    uint8_t end;
+
+public:
+    size_t totalBytes() const;
+
+    static size_t minSize();
+private:
+    void net2Host();
+
+};
+
+class RtcpSdes : public RtcpHeader {
+public:
+    SdesChunk chunks;
+
+public:
+    /**
+     * 创建SDES包，只赋值了RtcpHeader以及SdesChunk对象的length和text部分
+     * @param item_text SdesChunk列表，只赋值length和text部分
+     * @return SDES包
+     */
+    static std::shared_ptr<RtcpSdes> create(const std::vector<std::string>& item_text);
+
+    std::vector<SdesChunk*> getChunkList();
+
+private:
+    void net2Host(size_t size);
+};
+
+
 #endif //RTCP_H
