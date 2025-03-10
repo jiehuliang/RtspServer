@@ -16,14 +16,24 @@ set(CMAKE_BUILD_TYPE Debug)
 # 针对 Debug 模式添加额外的编译选项
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # -g: 生成调试信息, -O0: 禁用优化
 
+#设置bin和lib库目录
+set(RELEASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/release)
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    SET(LIBRARY_OUTPUT_PATH ${RELEASE_DIR}/linux/${CMAKE_BUILD_TYPE})
+    SET(EXECUTABLE_OUTPUT_PATH ${RELEASE_DIR}/linux/${CMAKE_BUILD_TYPE})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/bin/2.264 ${EXECUTABLE_OUTPUT_PATH}/2.264)
+endif()
+
+link_directories(${LIBRARY_OUTPUT_PATH})
 
 #设置工程源码根目录
 set(NWTool_Root ${CMAKE_CURRENT_SOURCE_DIR}/3rdpart/NWTool/src)
 set(Media_Root ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 #设置头文件目录
-INCLUDE_DIRECTORIES(${NWTool_Root})
-INCLUDE_DIRECTORIES(${Media_Root})
+include_directories(${NWTool_Root})
+include_directories(${Media_Root})
 
 set(LINK_LIB_LIST Media NWTool)
 
@@ -35,48 +45,12 @@ file(GLOB Media_src_list ${Media_Root}/*/*.cpp ${Media_Root}/*/*.h ${Media_Root}
 add_library(NWTool STATIC ${NWTool_src_list})
 add_library(Media STATIC ${Media_src_list})
 
-#设置子目录
-#Set subdirectories
-set(SUB_DIR_LIST "Rtsp" "Rtcp")
-
-foreach(SUB_DIR ${SUB_DIR_LIST})
-    #遍历源文件
-    #Traverse source file
-    aux_source_directory(src/${SUB_DIR} SRC_LIST)
-    include_directories(src/${SUB_DIR})
-endforeach()
-
-#安装目录
-#Installation directory
-if(WIN32)
-    set(INSTALL_PATH_LIB $ENV{HOME}/${PROJECT_NAME}/lib)
-    set(INSTALL_PATH_INCLUDE $ENV{HOME}/${PROJECT_NAME}/include)
-else()
-    set(INSTALL_PATH_LIB lib)
-    set(INSTALL_PATH_INCLUDE include)
-endif()
 
 if(WIN32)
-    set(LINK_LIB_LIST WS2_32 Iphlpapi shlwapi)
+    list(APPEND LINK_LIB_LIST WS2_32 Iphlpapi shlwapi)
 else()
-    set(LINK_LIB_LIST)
+    list(APPEND LINK_LIB_LIST pthread)
 endif()
-
-#编译动态库
-#Compile dynamic library
-if(NOT IOS AND NOT ANDROID AND NOT WIN32)
-    add_library(${PROJECT_NAME}_shared SHARED ${SRC_LIST})
-    target_include_directories(${PROJECT_NAME}_shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-    target_link_libraries(${PROJECT_NAME}_shared ${LINK_LIB_LIST})
-    set_target_properties(${PROJECT_NAME}_shared PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
-    set_target_properties(${PROJECT_NAME}_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
-    #install(TARGETS ${PROJECT_NAME}_shared  ARCHIVE DESTINATION ${INSTALL_PATH_LIB} LIBRARY DESTINATION ${INSTALL_PATH_LIB})
-endif()
-
-#编译静态库
-#Compile static library
-add_library(${PROJECT_NAME}_static STATIC ${SRC_LIST})
-
 
 add_subdirectory(server)
 

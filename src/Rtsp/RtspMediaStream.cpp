@@ -1,7 +1,7 @@
 #include "RtspMediaStream.h"
-#include "Logging.h"
-#include "File.h"
-#include "base64.h"
+#include "Log/Logging.h"
+#include "Util/File.h"
+#include "Util/base64.h"
 #include "H264.h"
 
 RtspMediaStream::RtspMediaStream(std::string url):url_(url) {

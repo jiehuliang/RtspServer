@@ -1,9 +1,9 @@
 #include "RtspSession.h"
-#include "HttpRequest.h"
-#include "TcpConnection.h"
-#include "EventLoop.h"
-#include"common.h"
-#include "Logging.h"
+#include "Http/HttpRequest.h"
+#include "NetWork/TcpConnection.h"
+#include "Event/EventLoop.h"
+#include "Util/common.h"
+#include "Log/Logging.h"
 
 #include <cinttypes>
 #include <iomanip>

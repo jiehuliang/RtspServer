@@ -1,10 +1,11 @@
 #include "RtspServer.h"
-#include "EventLoop.h"
-#include "TcpServer.h"
-#include "TcpConnection.h"
-#include "Logging.h"
-#include "Buffer.h"
-#include "HttpContext.h"
+#include "RtspSession.h"
+#include "Event/EventLoop.h"
+#include "NetWork/TcpServer.h"
+#include "NetWork/TcpConnection.h"
+#include "Log/Logging.h"
+#include "NetWork/Buffer.h"
+#include "Http/HttpContext.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <functional>
@@ -21,11 +22,14 @@ RtspServer::~RtspServer() {
 }
 
 void RtspServer::OnConnection(const std::shared_ptr<TcpConnection>& conn) {
+	auto rtsp_session = std::make_shared<RtspSession>();
+	rtsp_session->setConnWeakPtr(conn);
+	conn->set_session(rtsp_session);
+
 	int clnt_fd = conn->fd();
 	struct sockaddr_in peeraddr;
 	socklen_t peer_addrlength = sizeof(peeraddr);
 	getpeername(clnt_fd,(struct sockaddr *)&peeraddr,&peer_addrlength);
-
 	LOG_INFO << "RtspServer::OnNewConnection : Add connection "
 		<< "[ fd#" << clnt_fd << "-id#" << conn->id() << " ]"
 		<< " from " << inet_ntoa(peeraddr.sin_addr) << ":" << ntohs(peeraddr.sin_port);
@@ -46,7 +50,7 @@ void RtspServer::OnMessage(const std::shared_ptr<TcpConnection>& conn) {
 			}
 			if (context->GetCompleteRequest())
 			{
-				conn->session()->onWholeRtspPacket(*context->request());
+				((RtspSession*)conn->session())->onWholeRtspPacket(*context->request());
 				context->ResetContextStatus();
 			}
 		}
@@ -65,7 +69,7 @@ void RtspServer::OnMessage(const std::shared_ptr<TcpConnection>& conn) {
 				return;
 			}
 			auto str = conn->read_buf()->RetrieveAsString(RtpPacket::RtpTcpHeaderSize + length);
-			conn->session()->onRtpPacket(str.c_str(), str.size());
+			((RtspSession*)conn->session())->onRtpPacket(str.c_str(), str.size());
 		}
 
 	}

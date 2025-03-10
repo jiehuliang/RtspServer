@@ -6,8 +6,8 @@
 #include <cstdio>
 #include "RtspMediaStream.h"
 #include "Rtsp.h"
-#include "Timer.h"
-#include "RtcpContext.h"
+#include "Timer/Timer.h"
+#include "Rtcp/RtcpContext.h"
 class HttpRequest;
 class TcpConnection;
 

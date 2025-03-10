@@ -1,19 +1,13 @@
-aux_source_directory(. SRCLIST)
+include_directories(../3rdpart)
 
-include_directories(../include)
+file(GLOB RtspServer_src_list ./*.cpp ./*.h)
 
+add_executable(RtspServer ${RtspServer_src_list})
 
-foreach(TEST_SRC ${SRCLIST})
-	STRING(REGEX REPLACE "^\\./|\\.c[a-zA-Z0-9_]*$" "" TEST_EXE_NAME ${TEST_SRC})
-	add_executable(${TEST_EXE_NAME} ${TEST_SRC})
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+	target_link_libraries(RtspServer -Wl,--start-group ${LINK_LIB_LIST} -Wl,--end-group)
+else ()
+	target_link_libraries(RtspServer  ${LINK_LIB_LIST})
+endif ()
 
-	if(ANDROID OR IOS OR WIN32)
-        target_link_libraries(${TEST_EXE_NAME} ${PROJECT_NAME}_static ${LINK_LIB_LIST})
-    else()
-        target_link_libraries(${TEST_EXE_NAME} ${PROJECT_NAME}_shared ${LINK_LIB_LIST} pthread)
-    endif()
-endforeach(TEST_SRC ${SRCLIST})
-
-
-
-set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+message(STATUS "${LINK_LIB_LIST}")

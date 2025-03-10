@@ -1,8 +1,8 @@
 #ifndef RTCP_CONTEXT_H
 #define RTCP_CONTEXT_H
 #include "Rtcp.h"
-#include "Buffer.h"
-#include "Logging.h"
+#include "NetWork/Buffer.h"
+#include "Log/Logging.h"
 #include <map>
 
 class RtcpContext {
