@@ -1,0 +1,3 @@
+[submodule "3rdpart/NWTool"]
+	path = 3rdpart/NWTool
+	url = https://github.com/jiehuliang/NWTool.git
