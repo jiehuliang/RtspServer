@@ -4,7 +4,7 @@
 cmake_minimum_required (VERSION 3.8)
 
 
-project ("RSTool")
+project ("RtspServer")
 
 # 使能 C++11
 # Enable C++11
@@ -16,9 +16,28 @@ set(CMAKE_BUILD_TYPE Debug)
 # 针对 Debug 模式添加额外的编译选项
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # -g: 生成调试信息, -O0: 禁用优化
 
+
+#设置工程源码根目录
+set(NWTool_Root ${CMAKE_CURRENT_SOURCE_DIR}/3rdpart/NWTool/src)
+set(Media_Root ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+#设置头文件目录
+INCLUDE_DIRECTORIES(${NWTool_Root})
+INCLUDE_DIRECTORIES(${Media_Root})
+
+set(LINK_LIB_LIST Media NWTool)
+
+#收集源代码
+file(GLOB NWTool_src_list ${NWTool_Root}/*/*.cpp ${NWTool_Root}/*/*.h ${NWTool_Root}/*/*.c)
+file(GLOB Media_src_list ${Media_Root}/*/*.cpp ${Media_Root}/*/*.h ${Media_Root}/*/*.c)
+
+#添加库
+add_library(NWTool STATIC ${NWTool_src_list})
+add_library(Media STATIC ${Media_src_list})
+
 #设置子目录
 #Set subdirectories
-set(SUB_DIR_LIST "Util" "NetWork" "Event" "Timer" "Thread" "http" "log" "Rtsp" "Rtcp")
+set(SUB_DIR_LIST "Rtsp" "Rtcp")
 
 foreach(SUB_DIR ${SUB_DIR_LIST})
     #遍历源文件
@@ -51,7 +70,7 @@ if(NOT IOS AND NOT ANDROID AND NOT WIN32)
     target_link_libraries(${PROJECT_NAME}_shared ${LINK_LIB_LIST})
     set_target_properties(${PROJECT_NAME}_shared PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
     set_target_properties(${PROJECT_NAME}_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
-    install(TARGETS ${PROJECT_NAME}_shared  ARCHIVE DESTINATION ${INSTALL_PATH_LIB} LIBRARY DESTINATION ${INSTALL_PATH_LIB})
+    #install(TARGETS ${PROJECT_NAME}_shared  ARCHIVE DESTINATION ${INSTALL_PATH_LIB} LIBRARY DESTINATION ${INSTALL_PATH_LIB})
 endif()
 
 #编译静态库
@@ -59,7 +78,7 @@ endif()
 add_library(${PROJECT_NAME}_static STATIC ${SRC_LIST})
 
 
-add_subdirectory(tests)
+add_subdirectory(server)
 
 # Expected directory structure.
 set(PINE_BUILD_SUPPORT_DIR "${CMAKE_SOURCE_DIR}/build_support")
