@@ -1,6 +1,6 @@
 #include "Rtcp.h"
 #include "Log/Logging.h"
-#include "NetWork/Buffer.h"
+#include "Util/Buffer.h"
 #include <arpa/inet.h>
 
 void RtcpHeader::setSize(size_t size) {

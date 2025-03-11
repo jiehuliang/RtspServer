@@ -4,7 +4,7 @@
 #include "NetWork/TcpServer.h"
 #include "NetWork/TcpConnection.h"
 #include "Log/Logging.h"
-#include "NetWork/Buffer.h"
+#include "Util/Buffer.h"
 #include "Http/HttpContext.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>

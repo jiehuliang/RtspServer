@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <endian.h>
 #include <string>
-#include "NetWork/Buffer.h"
+#include "Util/Buffer.h"
 
 
 typedef enum {
