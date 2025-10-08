@@ -3,7 +3,7 @@
 #include "Event/EventLoop.h"
 #include "NetWork/TcpServer.h"
 #include "NetWork/TcpConnection.h"
-#include "Log/Logging.h"
+#include "HooLog/HooLog.h"
 #include "Util/Buffer.h"
 #include "Http/HttpContext.h"
 #include <arpa/inet.h>
@@ -44,9 +44,9 @@ void RtspServer::OnMessage(const std::shared_ptr<TcpConnection>& conn) {
 			auto str = conn->read_buf()->RetrieveAllAsString();
 			if (!context->ParaseRequest(str))
 			{
-				LOG_INFO << "RtspServer::onMessage : Receive non Rtsp message ";
-				//conn->Send("Rtsp/1.0 400 Bad Request\r\n\r\n");
-				//conn->HandleClose();
+				LOG_ERROR << "RtspServer::onMessage : Receive Invalid Rtsp message : " << str;
+				conn->Send("Rtsp/1.0 400 Bad Request ");
+				conn->HandleClose();
 			}
 			if (context->GetCompleteRequest())
 			{
@@ -55,22 +55,26 @@ void RtspServer::OnMessage(const std::shared_ptr<TcpConnection>& conn) {
 			}
 		}
 		else {
-			//这是rtp包
-			if (conn->read_buf()->readablebytes() < 4) {
-				//数据不够
-				return ;
-			}
-			if (ptr[1] != 0x00 && ptr[1] != 0x01 && ptr[1] != 0x02 && ptr[1] != 0x03) {
-				//数据错误
-				return ;
-			}
-			uint16_t length = (((uint8_t*)ptr)[2] << 8) | ((uint8_t*)ptr)[3];
-			if (conn->read_buf()->readablebytes() < length) {
-				return;
-			}
-			auto str = conn->read_buf()->RetrieveAsString(RtpPacket::RtpTcpHeaderSize + length);
-			((RtspSession*)conn->session())->onRtpPacket(str.c_str(), str.size());
+			auto str = conn->read_buf()->RetrieveAllAsString();
+			LOG_ERROR << "RtspServer::onMessage : Receive Invalid Rtsp message : " << str;
 		}
+		//else {
+		//	//这是rtp包
+		//	if (conn->read_buf()->readablebytes() < 4) {
+		//		//数据不够
+		//		return ;
+		//	}
+		//	if (ptr[1] != 0x00 && ptr[1] != 0x01 && ptr[1] != 0x02 && ptr[1] != 0x03) {
+		//		//数据错误
+		//		return ;
+		//	}
+		//	uint16_t length = (((uint8_t*)ptr)[2] << 8) | ((uint8_t*)ptr)[3];
+		//	if (conn->read_buf()->readablebytes() < length) {
+		//		return;
+		//	}
+		//	auto str = conn->read_buf()->RetrieveAsString(RtpPacket::RtpTcpHeaderSize + length);
+		//	((RtspSession*)conn->session())->onRtpPacket(str.c_str(), str.size());
+		//}
 
 	}
 }

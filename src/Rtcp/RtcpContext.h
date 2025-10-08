@@ -2,7 +2,7 @@
 #define RTCP_CONTEXT_H
 #include "Rtcp.h"
 #include "Util/Buffer.h"
-#include "Log/Logging.h"
+#include "HooLog/HooLog.h"
 #include <map>
 
 class RtcpContext {

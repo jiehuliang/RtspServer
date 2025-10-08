@@ -1,5 +1,5 @@
-#ifndef RtspServer_H
-#define RtspServer_H
+#ifndef RTSP_SERVER_H
+#define RTSP_SERVER_H
 
 #include "Util/common.h"
 #include <memory>
@@ -32,4 +32,4 @@ private:
 	bool auto_close_conn_;
 };
 
-#endif // RTSPSERVER_H
+#endif // RTSP_SERVER_H

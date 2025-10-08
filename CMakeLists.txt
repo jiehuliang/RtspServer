@@ -22,7 +22,7 @@ set(RELEASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/release)
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     SET(LIBRARY_OUTPUT_PATH ${RELEASE_DIR}/linux/${CMAKE_BUILD_TYPE})
     SET(EXECUTABLE_OUTPUT_PATH ${RELEASE_DIR}/linux/${CMAKE_BUILD_TYPE})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/bin/2.264 ${EXECUTABLE_OUTPUT_PATH}/2.264)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/bin/hylw.264 ${EXECUTABLE_OUTPUT_PATH}/2.264)
 endif()
 
 link_directories(${LIBRARY_OUTPUT_PATH})
@@ -53,6 +53,7 @@ else()
 endif()
 
 add_subdirectory(server)
+add_subdirectory(client)
 
 # Expected directory structure.
 set(PINE_BUILD_SUPPORT_DIR "${CMAKE_SOURCE_DIR}/build_support")
