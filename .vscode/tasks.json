@@ -28,24 +28,6 @@
             "args": [
                 "--build",
                 "${workspaceFolder}/build",
-                //"--target",
-                //"RtspServer"  // 指定构建目标
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}/build"
-            },
-            "problemMatcher": [
-                "$gcc"
-            ]
-        },
-        {
-            "type": "shell",
-            "label": "CMake Build RtspClient",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "${workspaceFolder}/build",
-                "--parallel"
             ],
             "options": {
                 "cwd": "${workspaceFolder}/build"
