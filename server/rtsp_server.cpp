@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
 	int size = std::thread::hardware_concurrency() - 1;
 	EventLoop* loop = new EventLoop();
-	RtspServer* rtspServer = new RtspServer(loop, "172.31.2.240", port, true);
+	RtspServer* rtspServer = new RtspServer(loop, "127.0.0.1", port, true);
 	rtspServer->SetThreadNums(size);
     rtspServer->start();
 }

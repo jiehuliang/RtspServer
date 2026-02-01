@@ -4,14 +4,10 @@
             "name": "Linux",
             "includePath": [
                 "${default}",
-                "${workspaceFolder}/src/Event/**",
-                "${workspaceFolder}/src/http/**",
-                "${workspaceFolder}/src/log/**",
-                "${workspaceFolder}/src/NetWork/**",
                 "${workspaceFolder}/src/Rtsp/**",
-                "${workspaceFolder}/src/Thread/**",
-                "${workspaceFolder}/src/Timer/**",
-                "${workspaceFolder}/src/Util/**"
+                "${workspaceFolder}/src/Rtcp/**",
+                "${workspaceFolder}/3rdpart/**",
+                "${workspaceFolder}/src/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
@@ -21,14 +17,8 @@
             "browse": {
                 "path": [
                     "/usr/include",
-                    "${workspaceFolder}/src/Event",
-                    "${workspaceFolder}/src/http",
-                    "${workspaceFolder}/src/log",
-                    "${workspaceFolder}/src/NetWork",
-                    "${workspaceFolder}/src/Rtsp",
-                    "${workspaceFolder}/src/Thread",
-                    "${workspaceFolder}/src/Timer",
-                    "${workspaceFolder}/src/Util"
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/3rdpart/NWTool/src"
                 ]
             },
             "configurationProvider": "ms-vscode.cmake-tools"

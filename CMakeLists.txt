@@ -17,12 +17,15 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # -g: 生成调试信息, -O0: 禁用优化
 
 #设置bin和lib库目录
-set(RELEASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/release)
+set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(RELEASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    SET(LIBRARY_OUTPUT_PATH ${RELEASE_DIR}/linux/${CMAKE_BUILD_TYPE})
-    SET(EXECUTABLE_OUTPUT_PATH ${RELEASE_DIR}/linux/${CMAKE_BUILD_TYPE})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/bin/hylw.264 ${EXECUTABLE_OUTPUT_PATH}/2.264)
+    SET(LIBRARY_OUTPUT_PATH ${LIBRARY_DIR})
+    SET(EXECUTABLE_OUTPUT_PATH ${RELEASE_DIR})
+    #SET(EXECUTABLE_OUTPUT_PATH ${RELEASE_DIR}/linux/${CMAKE_BUILD_TYPE})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/source/hylw.264 ${EXECUTABLE_OUTPUT_PATH}/2.264)
 endif()
 
 link_directories(${LIBRARY_OUTPUT_PATH})
@@ -40,6 +43,7 @@ set(LINK_LIB_LIST Media NWTool)
 #收集源代码
 file(GLOB NWTool_src_list ${NWTool_Root}/*/*.cpp ${NWTool_Root}/*/*.h ${NWTool_Root}/*/*.c)
 file(GLOB Media_src_list ${Media_Root}/*/*.cpp ${Media_Root}/*/*.h ${Media_Root}/*/*.c)
+
 
 #添加库
 add_library(NWTool STATIC ${NWTool_src_list})

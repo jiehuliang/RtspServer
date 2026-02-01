@@ -2,30 +2,47 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "C/C++: g++ build and debug active file",
+            "name": "C/C++: Debug Active Target",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/rtsp_server",
+            "program": "${workspaceFolder}/bin/${input:pickTarget}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [
-                {        
-                "name": "LD_LIBRARY_PATH",
-                "value": "${workspaceFolder}/bin/:$LD_LIBRARY_PATH"
+                {
+                    "name": "LD_LIBRARY_PATH",
+                    "value": "${workspaceFolder}/bin:${env:LD_LIBRARY_PATH}"
                 }
             ],
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [
                 {
-                    "description": "Enable pretty-printing for gdb",
+                    "description": "Enable pretty-printing",
                     "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Ignore SIGPIPE (RTSP 连接断开常见)",
+                    "text": "handle SIGPIPE nostop noprint",
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "Build Project",
+            "preLaunchTask": "${defaultBuildTask}",
             "miDebuggerPath": "/usr/bin/gdb"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "pickTarget",
+            "type": "pickString",
+            "description": "选择要调试的目标",
+            "options": [
+                "RtspServer",
+                "RtspClient"
+            ],
+            "default": "RtspServer"
         }
     ]
 }
