@@ -15,7 +15,7 @@
                 "Unix Makefiles"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                //"cwd": "${fileDirname}"
             },
             "problemMatcher": [
                 "$gcc"
