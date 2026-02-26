@@ -8,7 +8,6 @@ class EventLoop;
 class TcpServer;
 class TcpConnection;
 
-// �Զ��رյ�ʱ�䣬����Ϊ��λ
 #define AUTOCLOSETIMEOUT 100
 
 class RtspServer{
@@ -28,7 +27,6 @@ private:
 	EventLoop* loop_;
 	std::unique_ptr<TcpServer> server_;
 
-	// �Ƿ��Զ��ر����ӡ�
 	bool auto_close_conn_;
 };
 

@@ -25,7 +25,8 @@ void H264RtpEncoder::insertConfigFrame(uint32_t pts) {
     if (!sps_ || !pps_) {
         return;
     }
-    //gop�����sps��ʼ��sps��pps���滹��ʱ�����ͬ�Ĺؼ�֡������mark bitΪfalse
+    // gop缓存从sps开始，sps、pps后面还有时间戳相同的关键帧，所以mark bit为false 
+    // The gop cache starts from sps, sps, pps and then there are key frames with the same timestamp, so the mark bit is false
     packRtp(sps_->buffer.c_str(), sps_->len, pts, false, true);
     packRtp(pps_->buffer.c_str(), sps_->len, pts, false, false);
 }
@@ -46,7 +47,8 @@ int H264RtpEncoder::inputFrame(const H264Nalu::Ptr& nalu) {
         return true;
     }
     if (last_nalu_) {
-        //���ʱ��������˱仯����ômarkbit����true
+        // 如果时间戳发生了变化，那么markbit才置true
+        // If the timestamp changes, then the markbit is set to true
         inputFrame_l(last_nalu_, last_nalu_->_pts != nalu->_pts);
     }
     last_nalu_ = std::move(nalu);
@@ -54,7 +56,8 @@ int H264RtpEncoder::inputFrame(const H264Nalu::Ptr& nalu) {
 
 bool H264RtpEncoder::inputFrame_l(const H264Nalu::Ptr& nalu, bool is_mark){
     if (nalu->keyFrame()) {
-        //��֤ÿһ���ؼ�֡ǰ����SPS��PPS
+        // 保证每一个关键帧前都有SPS与PPS
+        // Ensure that there are SPS and PPS before each key frame
         insertConfigFrame(nalu->_pts);
     }
     packRtp(nalu->buffer.c_str(), nalu->len, nalu->_pts, is_mark, false);
@@ -135,7 +138,8 @@ RtpPacket::Ptr H264RtpEncoder::makeRtp(int type,const char* data,size_t len,bool
     header->timestamp = htonl(uint64_t(stamp));
     header->ssrc = htonl(_ssrc);
 
-    //��Ч����
+    // 有效负载
+    // payload
     if (data) {
         memcpy(&ptr[RtpPacket::RtpHeaderSize + RtpPacket::RtpTcpHeaderSize], data, len);
     }

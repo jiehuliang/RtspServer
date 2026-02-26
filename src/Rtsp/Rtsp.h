@@ -60,8 +60,8 @@ public:
 	uint32_t seq : 16;	/* sequence number */
 	uint32_t timestamp;	/* timestamp */
 	uint32_t ssrc;	/* synchronization source */
-	// ���أ������csrc��ext��ǰ��Ϊ 4 * csrc + (4 + 4 * ext_len)  [AUTO-TRANSLATED:fcd87b19]
-	// Payload, if csrc and ext exist, the front is 4 * csrc + (4 + 4 * ext_len)
+    // 负载，如果有csrc和ext，前面为 4 * csrc + (4 + 4 * ext_len) 
+    // Payload, if csrc and ext exist, the front is 4 * csrc + (4 + 4 * ext_len)
 	uint8_t payload;
 
 public:
@@ -90,7 +90,7 @@ public:
 	RtpHeader* getHeader();
 	const RtpHeader* getHeader() const;
 
-	//�����ֽ����seq
+	// 主机字节序的seq
 	//Host byte order seq
 	uint16_t getSeq() const;
 	uint32_t getStamp() const;
@@ -131,7 +131,8 @@ public:
 	uint8_t _interleaved = 0;
 	uint16_t _seq = 0;
 	uint32_t _ssrc = 0;
-	//ʱ�������λ����
+	// 时间戳，单位毫秒 
+    // Timestamp, unit: milliseconds
 	uint32_t _time_stamp = 0;
 };
 

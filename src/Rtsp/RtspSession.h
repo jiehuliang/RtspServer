@@ -6,12 +6,13 @@
 #include <cstdio>
 #include "RtspMediaStream.h"
 #include "Rtsp.h"
+#include "NetWork/TcpConnection.h"
 #include "Timer/Timer.h"
 #include "Rtcp/RtcpContext.h"
 class HttpRequest;
 class TcpConnection;
 
-class RtspSession :public std::enable_shared_from_this<RtspSession>{
+class RtspSession :public SessionBase , public std::enable_shared_from_this<RtspSession>{
 	using RtspRequest = HttpRequest;
 	using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 public:
@@ -25,9 +26,9 @@ public:
 	void handleTeardown(const RtspRequest& request);
 	void handlePause(const RtspRequest& request);
 
-	//触发rtcp发送
+	//rtcp
 	void updateRtcpContext(const RtpPacket::Ptr& rtp);
-	//收到rtp包
+	//rtp
 	void onRtpPacket(const char* data,size_t len);
 
 	void onRtcpPacket(const char* data, size_t len);
@@ -49,16 +50,16 @@ public:
 private:
 	std::weak_ptr<TcpConnection> conn_weak_self;
 
-	//收到的seq，回复时一致
+
 	int _cseq = 0;
-	//消耗的总流量
+
 	uint64_t _bytes_usage = 0;
 	//ContentBase
 	std::string _content_base;
-	//Session号
+	//Session id
 	std::string _sessionid;
 
-	//解析后的url信息
+
 	std::string _schema;
 	std::string _host;
 	uint16_t _port = 0;
@@ -69,7 +70,7 @@ private:
 
 	std::shared_ptr<RtspMediaStream> _stream;
 
-	//推流或拉流客户端采用的rtp传输方式
+
 	eRtpType _rtp_type = eRtpType::RTP_Invalid;
 
 

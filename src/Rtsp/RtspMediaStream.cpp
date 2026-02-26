@@ -68,14 +68,14 @@ std::string RtspMediaStream::h264_sdp_create(const char* sps, const int sps_len,
 	av_base64_encode(str_pps, 100, (uint8_t*)pps, pps_len);
 
 	/**
-	 Single NAI Unit Mode = 0. // Single NAI mode (Only nals from 1-23 are allowed)
-	 Non Interleaved Mode = 1��// Non-interleaved Mode: 1-23��24 (STAP-A)��28 (FU-A) are allowed
-	 Interleaved Mode = 2,  // 25 (STAP-B)��26 (MTAP16)��27 (MTAP24)��28 (EU-A)��and 29 (EU-B) are allowed.
-	 Single NAI Unit Mode = 0. // Single NAI mode (Only nals from 1-23 are allowed)
-	 Non Interleaved Mode = 1��// Non-interleaved Mode: 1-23��24 (STAP-A)��28 (FU-A) are allowed
-	 Interleaved Mode = 2,  // 25 (STAP-B)��26 (MTAP16)��27 (MTAP24)��28 (EU-A)��and 29 (EU-B) are allowed.
-	 *
-	 **/
+	Single NAI Unit Mode = 0. // Single NAI mode (Only nals from 1-23 are allowed)
+	Non Interleaved Mode = 1，// Non-interleaved Mode: 1-23，24 (STAP-A)，28 (FU-A) are allowed
+	Interleaved Mode = 2,  // 25 (STAP-B)，26 (MTAP16)，27 (MTAP24)，28 (EU-A)，and 29 (EU-B) are allowed.
+	Single NAI Unit Mode = 0. // Single NAI mode (Only nals from 1-23 are allowed)
+	Non Interleaved Mode = 1，// Non-interleaved Mode: 1-23，24 (STAP-A)，28 (FU-A) are allowed
+	Interleaved Mode = 2,  // 25 (STAP-B)，26 (MTAP16)，27 (MTAP24)，28 (EU-A)，and 29 (EU-B) are allowed.
+	*
+	**/
 	int h264_stap_a = 1;
 
 	char demo[] =
