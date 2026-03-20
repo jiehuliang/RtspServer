@@ -26,8 +26,7 @@ int main(int argc, char* argv[]) {
 	setLogLevel(loglevel::DEBUG);
 
 	std::unique_ptr<EventLoopThread> ptr = std::unique_ptr<EventLoopThread>(new EventLoopThread());
-	ptr->StartLoop();
-	std::shared_ptr<RtspClient> rtsp_client = std::make_shared<RtspClient>(ptr,"172.31.2.240",port);
+	std::shared_ptr<RtspClient> rtsp_client = std::make_shared<RtspClient>(ptr->StartLoop(),"172.31.2.240",port);
 	rtsp_client->Start();
 	while (1) {
 		//rtsp_client->Write("hello !!!!!!");

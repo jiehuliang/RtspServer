@@ -4,6 +4,8 @@
 #include "NetWork/TcpConnection.h"
 #include "Rtsp.h"
 
+#include<map>
+
 class HttpRequest;
 class TcpConnection;
 
@@ -39,11 +41,22 @@ private:
     void sendDescribe();
     void sendTeardown();
     void sendKeepAlive();
-    void sendRtspRequest(const std::string &cmd, const std::string &url ,const StrCaseMap &header = StrCaseMap());
-    void sendRtspRequest(const std::string &cmd, const std::string &url ,const std::initializer_list<std::string> &header);
+    void sendRtspRequest(const std::string &cmd, const std::string &url ,const std::initializer_list<std::string> &header = {});
+    void sendRtspRequest(const std::string &cmd, const std::string &url ,const std::map<std::string, std::string>& headers);
+
 
 private:
     std::weak_ptr<TcpConnection> conn_weak_self;
+
+    std::string _url;
+    std::string _base_url;
+    std::string _rtsp_username;
+    std::string _rtsp_password;
+
+
+    int _cseq;
+    std::string _session_id;
+    std::string kServerName;
 };
 
 
